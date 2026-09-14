@@ -4,9 +4,10 @@
 
 /* Reglas básicas de ejemplo */
 %%
-[0-9]+          { printf("Número encontrado: %s\n", yytext); }
+[0-9]+          { printf("Numero encontrado: %s\n", yytext); }
 [a-zA-Z]+       { printf("Palabra encontrada: %s\n", yytext); }
 "\n"            { /* Ignorar saltos de línea */ }
+[ \t]           { /* Ignorar espacios vacios y tabulaciones */ }
 .               { /* Ignorar cualquier otro carácter */ }
 %%
 

@@ -1,14 +1,40 @@
 %{
 #include <stdio.h>
 %}
+DIGIT [0-9]
+ALPHA [a-zA-Z]
+ALPHA_NUM {ALPHA}|{DIGIT}|"_"
+
+INTEGER {DIGIT}+
+BOOLEAN "true"|"false"
+FLOAT {INTEGER}\.{INTEGER}
+ID {ALPHA}{ALPHA_NUM}*
+
+ARIT_OP "+"|"-"|"*"|"/"|"%"
+COND_OP "&&"|"||"
+REL_OP "<"|">"|"=="
+OP {ARIT_OP}|{COND_OP}|{REL_OP}
+
+TYPE "int"|"bool"|"float"
+RESERVED "return"|"if"|"while"|"else"|"void"|"main"
+DELIMITER ";"|"("|")"|"{"|"}"
+
 
 /* Reglas básicas de ejemplo */
 %%
-[0-9]+          { printf("Numero encontrado: %s\n", yytext); }
-[a-zA-Z]+       { printf("Palabra encontrada: %s\n", yytext); }
-"\n"            { /* Ignorar saltos de línea */ }
-[ \t]           { /* Ignorar espacios vacios y tabulaciones */ }
-.               { /* Ignorar cualquier otro carácter */ }
+{RESERVED}              { printf("Palabra reservada: %s\n", yytext); }
+{DELIMITER}             { printf("Delimitador: %s\n", yytext); }
+{TYPE}                  { printf("Tipo de dato: %s\n", yytext); }
+{INTEGER}               { printf("Numero: %s\n", yytext); }
+{BOOLEAN}               { printf("Booleano: %s\n", yytext); }
+{FLOAT}                 { printf("Flotante: %s\n", yytext); }
+{ID}                    { printf("ID: %s\n", yytext); }
+"="                     { printf("Asignacion: %s\n", yytext); }
+"!"                     { printf("Negacion: %s\n", yytext); }
+{OP}                    { printf("OP: %s\n", yytext); }
+"\n"                    { /* Ignorar saltos de línea */ }
+[ \t]                   { /* Ignorar espacios vacios y tabulaciones */ }
+.                       { printf("Lexema inesperado: %s\n", yytext); }
 %%
 
 int yywrap() {

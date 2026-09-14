@@ -1,0 +1,5 @@
+int a;
+int x = 0;
+bool y = True;
+y = y && True;
+a = 1 + x;

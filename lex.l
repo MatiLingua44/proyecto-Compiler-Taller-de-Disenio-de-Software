@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include "bison.tab.h"
 %}
 DIGIT [0-9]
 ALPHA [a-zA-Z]
@@ -10,37 +11,53 @@ BOOLEAN "true"|"false"
 FLOAT {INTEGER}\.{INTEGER}
 ID {ALPHA}{ALPHA_NUM}*
 
-ARIT_OP "+"|"-"|"*"|"/"|"%"
-COND_OP "&&"|"||"
-REL_OP "<"|">"|"=="
-OP {ARIT_OP}|{COND_OP}|{REL_OP}
-
 TYPE "int"|"bool"|"float"
 RESERVED "return"|"if"|"while"|"else"|"void"|"main"
-DELIMITER ";"|"("|")"|"{"|"}"
 
 
 /* Reglas básicas de ejemplo */
 %%
 {RESERVED}              { printf("Palabra reservada: %s\n", yytext); }
-{DELIMITER}             { printf("Delimitador: %s\n", yytext); }
 {TYPE}                  { printf("Tipo de dato: %s\n", yytext); }
-{INTEGER}               { printf("Numero: %s\n", yytext); }
-{BOOLEAN}               { printf("Booleano: %s\n", yytext); }
-{FLOAT}                 { printf("Flotante: %s\n", yytext); }
-{ID}                    { printf("ID: %s\n", yytext); }
-"="                     { printf("Asignacion: %s\n", yytext); }
-"!"                     { printf("Negacion: %s\n", yytext); }
-{OP}                    { printf("OP: %s\n", yytext); }
+{INTEGER}               return INTEGER; // { printf("Numero: %s\n", yytext); }
+{BOOLEAN}               return BOOLEAN; // { printf("Booleano: %s\n", yytext); }
+{FLOAT}                 return FLOAT; // { printf("Flotante: %s\n", yytext); }
+{ID}                    return ID; // { printf("ID: %s\n", yytext); }
+
+
+"+"                     return '+';
+"-"                     return '-';
+"*"                     return '*';
+"/"                     return '/';
+"%"                     return '%';
+
+"&&"                    return "&&";
+"||"                    return "||";
+
+"<"                     return '<';
+">"                     return '>';
+"=="                    return "==";
+
+"="                     return '='; // { printf("Asignacion: %s\n", yytext); }
+"!"                     return '!'; // { printf("Negacion: %s\n", yytext); }
+
+
+";"                     return ';';
+"("                     return '(';
+")"                     return ')';
+"{"                     return '{';
+"}"                     return '}';
 "\n"                    { /* Ignorar saltos de línea */ }
 [ \t]                   { /* Ignorar espacios vacios y tabulaciones */ }
 .                       { printf("Lexema inesperado: %s\n", yytext); }
 %%
 
+
 int yywrap() {
     return 1;
 }
 
+/*
 int main(int argc, char *argv[]) {
     // Verificar si se pasó el nombre del archivo como argumento
     if (argc < 2) {
@@ -65,3 +82,4 @@ int main(int argc, char *argv[]) {
     fclose(archivo);
     return 0;
 }
+*/

@@ -13,7 +13,7 @@ ID {ALPHA}{ALPHA_NUM}*
 
 TYPE "int"|"bool"|"float"
 RESERVED "return"|"if"|"while"|"else"|"void"|"main"
-
+%x COMENTARIO
 
 /* Reglas básicas de ejemplo */
 %%
@@ -24,7 +24,7 @@ RESERVED "return"|"if"|"while"|"else"|"void"|"main"
 {FLOAT}                 return FLOAT; // { printf("Flotante: %s\n", yytext); }
 {ID}                    return ID; // { printf("ID: %s\n", yytext); }
 
-
+            
 "+"                     return '+';
 "-"                     return '-';
 "*"                     return '*';
@@ -43,6 +43,7 @@ RESERVED "return"|"if"|"while"|"else"|"void"|"main"
 
 
 ";"                     return ';';
+","                     return ',';
 "("                     return '(';
 ")"                     return ')';
 "{"                     return '{';
@@ -50,6 +51,25 @@ RESERVED "return"|"if"|"while"|"else"|"void"|"main"
 "\n"                    { /* Ignorar saltos de línea */ }
 [ \t]                   { /* Ignorar espacios vacios y tabulaciones */ }
 .                       { printf("Lexema inesperado: %s\n", yytext); }
+             
+"//"[^\n]*\n
+
+"/*"  {BEGIN(COMENTARIO);}
+
+<COMENTARIO>"*/"    {
+    BEGIN(INITIAL);
+}
+
+<COMENTARIO>\n  ;
+<COMENTARIO>. ;
+
+<COMENTARIO><<EOF>> {
+    fprintf(stderr,
+            "Error lexico:comentario sin Cerrar en linia %d\n",
+            yylineno);
+            return TOKEN_ERROR;
+}
+
 %%
 
 

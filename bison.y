@@ -1,7 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "bison.tab.h"
 // Declaraciones externas necesarias
 extern int yylex();
 extern int yyparse();
@@ -11,6 +11,7 @@ void yyerror(const char *s);
 %}
 
 %token INTEGER BOOLEAN FLOAT ID
+%token TOKEN_ERROR
 
 %%
 

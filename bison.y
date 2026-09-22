@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Declaraciones externas necesarias
 extern int yylex();
 extern int yyparse();
 extern FILE *yyin;
@@ -10,6 +9,7 @@ extern FILE *yyin;
 void yyerror(const char *s);
 %}
 
+%token RETURN IF ELSE WHILE VOID
 %token INTEGER BOOLEAN FLOAT ID
 %token TYPE
 
@@ -17,14 +17,74 @@ void yyerror(const char *s);
 %token AND OR
 %token MENOR MAYOR IGUALDAD
 
+/* --- PRECEDENCIAS (de menor a mayor) --- */
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
 
-
-%left AND OR
+%left OR
+%left AND
 %nonassoc MENOR MAYOR IGUALDAD
-%left SUMA RESTA MULTIPLICACION DIVISION MODULO
-%nonassoc MENOS_UNARIO
+%left SUMA RESTA
+%left MULTIPLICACION DIVISION MODULO
+%nonassoc '!' MENOS_UNARIO
 
 %%
+
+program:
+    /* vacío */
+    | lines
+    ;
+
+lines:
+    line
+    | lines line
+    ;
+
+line:
+    variable_declr
+    | method_decl
+    ;
+
+method_decl:
+    TYPE ID '(' parameters_list ')' block { printf("declaracion de metodo\n"); }
+    | VOID ID '(' parameters_list ')' block { printf("declaracion de metodo con retorno void\n"); }
+    ;
+
+parameters_list:
+    /* vacío */
+    | variable_declr_list { printf("lista de parametros\n"); }
+    ;
+
+variable_declr_list:
+    TYPE ID
+    | variable_declr_list ',' TYPE ID
+    ;
+
+block:
+    '{' statements_list '}' { printf("BLOQUE\n"); }
+    ;
+
+statements_list:
+    /* vacío */
+    | statements_list statement_or_decl
+    ;
+
+statement_or_decl:
+    variable_declr
+    | statement
+    ;
+
+statement:
+    ID '=' expression ';' { printf("ASIGNACION\n"); }
+    | method_call ';'
+    | IF '(' expression ')' block %prec LOWER_THAN_ELSE
+    | IF '(' expression ')' block ELSE block
+    | WHILE '(' expression ')' block
+    | RETURN expression ';'
+    | RETURN ';'
+    | ';'
+    | block
+    ;
 
 variable_declr:
     TYPE variable_list ';' { printf("DECLARACION DE VARIABLE\n"); }
@@ -38,34 +98,35 @@ variable_list:
 method_call:
     ID '(' expression_list ')' { printf("LLAMADA A METODO\n"); }
     ;
+
 expression_list:
-    expression               { printf("LISTA DE EXPRESIONES\n"); }
+    /* vacío */
+    | expression               { printf("LISTA DE EXPRESIONES\n"); }
     | expression_list ',' expression { printf("LISTA DE EXPRESIONES MULTIPLES\n"); }
     ;
 
-/*
 expression:
-    INTEGER                          { printf("INTEGER\n"); }
-    | BOOLEAN                        { printf("BOOLEAN\n"); }
-    | FLOAT                          { printf("FLOAT\n"); }
-    | ID                             { printf("ID\n"); }
+    ID                             { printf("ID\n"); }
+    | method_call
+    | INTEGER                      { printf("INTEGER\n"); }
+    | BOOLEAN                      { printf("BOOLEAN\n"); }
+    | FLOAT                        { printf("FLOAT\n"); }
 
-    | expression SUMA expression     { printf("suma\n"); }
-    | expression RESTA expression    { printf("resta\n"); }
+    | expression SUMA expression           { printf("suma\n"); }
+    | expression RESTA expression          { printf("resta\n"); }
     | expression MULTIPLICACION expression { printf("multiplicacion\n"); }
     | expression DIVISION expression       { printf("division\n"); }
     | expression MODULO expression         { printf("modulo\n"); }
-    | expression AND expression      { printf("AND\n"); }
-    | expression OR expression       { printf("OR\n"); }
-    | expression MENOR expression    { printf("MENOR\n"); }
-    | expression MAYOR expression    { printf("MAYOR\n"); }
-    | expression IGUALDAD expression { printf("IGUALDAD\n"); }
+    | expression AND expression            { printf("AND\n"); }
+    | expression OR expression             { printf("OR\n"); }
+    | expression MENOR expression          { printf("MENOR\n"); }
+    | expression MAYOR expression          { printf("MAYOR\n"); }
+    | expression IGUALDAD expression       { printf("IGUALDAD\n"); }
 
     | RESTA expression %prec MENOS_UNARIO { printf("menos expresion\n"); }
     | '!' expression                      { printf("expresion negada\n"); }
     | '(' expression ')'                  { printf("expresion entre parentesis\n"); }
     ;
-*/
 %%
 
 void yyerror(const char *s) {

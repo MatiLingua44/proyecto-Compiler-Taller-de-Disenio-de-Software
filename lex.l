@@ -12,14 +12,18 @@ FLOAT {INTEGER}\.{INTEGER}
 ID {ALPHA}{ALPHA_NUM}*
 
 TYPE "int"|"bool"|"float"
-RESERVED "return"|"if"|"while"|"else"|"void"|"main"
 
 %option noyywrap
 
 
 /* Reglas básicas de ejemplo */
 %%
-{RESERVED}              { printf("Palabra reservada: %s\n", yytext); }
+"return"                return RETURN;
+"if"                    return IF;
+"else"                  return ELSE;
+"while"                 return WHILE;
+"void"                  return VOID;
+
 {TYPE}                  return TYPE;
 {INTEGER}               return INTEGER;
 {BOOLEAN}               return BOOLEAN;

@@ -3,9 +3,9 @@
 # Detener el script inmediatamente si ocurre un error
 set -e
 
-# echo "=== 1. Compilando el proyecto ==="
-# echo "[Bison] Generando parser..."
-# bison -d bison.y
+echo "=== 1. Compilando el proyecto ==="
+echo "[Bison] Generando parser..."
+bison -d bison.y
 
 echo "[Flex] Generando lexer..."
 flex lex.l

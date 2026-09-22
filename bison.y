@@ -35,6 +35,14 @@ variable_list:
     | variable_list ',' ID { printf("DECLARACION DE VARIABLE MULTIPLE\n"); }
     ;
 
+method_call:
+    ID '(' expression_list ')' { printf("LLAMADA A METODO\n"); }
+    ;
+expression_list:
+    expression               { printf("LISTA DE EXPRESIONES\n"); }
+    | expression_list ',' expression { printf("LISTA DE EXPRESIONES MULTIPLES\n"); }
+    ;
+
 /*
 expression:
     INTEGER                          { printf("INTEGER\n"); }

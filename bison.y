@@ -9,6 +9,8 @@ extern FILE *yyin;
 void yyerror(const char *s);
 %}
 
+%token TOKEN_ERROR
+
 %token RETURN IF ELSE WHILE VOID
 %token INTEGER BOOLEAN FLOAT ID
 %token TYPE

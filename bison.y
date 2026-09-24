@@ -9,6 +9,8 @@ extern FILE *yyin;
 void yyerror(const char *s);
 %}
 
+%locations
+
 %token TOKEN_ERROR
 
 %token RETURN IF ELSE WHILE VOID
@@ -131,8 +133,10 @@ expression:
     ;
 %%
 
+// Implementación de yyerror usando la variable global yylloc de Bison
 void yyerror(const char *s) {
-    fprintf(stderr, "Error sintactico: %s\n", s);
+    fprintf(stderr, "Error Sintactico en la linea %d, columna %d: %s\n", 
+            yylloc.first_line, yylloc.first_column, s);
 }
 
 int main(int argc, char **argv) {

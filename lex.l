@@ -3,6 +3,15 @@
 #include "bison.tab.h"
 
 int commentary_counter = 0; /* Contador para comentarios anidados */
+// Variable global para rastrear la columna actual
+int current_column = 1;
+
+// YY_USER_ACTION se ejecuta automáticamente antes de la acción de CUALQUIER token
+#define YY_USER_ACTION \
+    yylloc.first_line = yylloc.last_line = yylineno; \
+    yylloc.first_column = current_column; \
+    yylloc.last_column = current_column + yyleng - 1; \
+    current_column += yyleng;
 %}
 DIGIT [0-9]
 ALPHA [a-zA-Z]
@@ -16,6 +25,7 @@ ID {ALPHA}{ALPHA_NUM}*
 TYPE "int"|"boolean"|"float"
 
 %x COMENTARIO
+%x COMENTARIO_LINEA
 
 %option yylineno
 %option noyywrap
@@ -58,11 +68,14 @@ TYPE "int"|"boolean"|"float"
 ")"                     return ')';
 "{"                     return '{';
 "}"                     return '}';
-"\n"                    { /* Ignorar saltos de línea */ }
+"\n"                    { current_column = 1; }
 [ \t]                   { /* Ignorar espacios vacios y tabulaciones */ }
-.                       { printf("Lexema inesperado: %s\n", yytext); return TOKEN_ERROR; }
+.                       { printf("Error Lexico Lexema inesperado: (%s) en linea %d, columna %d\n", yytext, yylineno, yylloc.first_column); return TOKEN_ERROR; }
 
-"//"[^\n]*\n            { printf("Comentario: %s", yytext); }
+"//"                    { BEGIN(COMENTARIO_LINEA); }
+<COMENTARIO_LINEA>\n    { current_column = 1; BEGIN(INITIAL); }
+<COMENTARIO_LINEA>.     ;
+<COMENTARIO_LINEA><<EOF>> { BEGIN(INITIAL); }
 
 "/*"  {
         commentary_counter = 1;
@@ -80,7 +93,7 @@ TYPE "int"|"boolean"|"float"
     }
 }
 
-<COMENTARIO>\n  ;
+<COMENTARIO>\n  { current_column = 1; };
 <COMENTARIO>. ;
 
 <COMENTARIO><<EOF>> {

@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include <string.h>
 #include "bison.tab.h"
 
 int commentary_counter = 0; /* Contador para comentarios anidados */
@@ -18,7 +19,6 @@ ALPHA [a-zA-Z]
 ALPHA_NUM {ALPHA}|{DIGIT}|"_"
 
 INTEGER {DIGIT}+
-BOOLEAN "true"|"false"
 FLOAT {INTEGER}\.{INTEGER}
 ID {ALPHA}{ALPHA_NUM}*
 
@@ -38,11 +38,12 @@ TYPE "int"|"boolean"|"float"
 "while"                 return WHILE;
 "void"                  return VOID;
 
-{TYPE}                  return TYPE;
-{INTEGER}               return INTEGER;
-{BOOLEAN}               return BOOLEAN;
-{FLOAT}                 return FLOAT;
-{ID}                    return ID;
+{TYPE}                  { yylval.texto = strdup(yytext); return TYPE; }
+{INTEGER}               { yylval.entero = atoi(yytext); return INTEGER; }
+"true"                  { yylval.boolean = 1; return BOOLEAN; }
+"false"                 { yylval.boolean = 0; return BOOLEAN; }
+{FLOAT}                 { yylval.flotante = atof(yytext); return FLOAT; }
+{ID}                    { yylval.texto = strdup(yytext); return ID; }
 
 
 "+"                     return SUMA;

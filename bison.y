@@ -11,11 +11,19 @@ void yyerror(const char *s);
 
 %locations
 
+%union {
+    int entero;
+    float flotante;
+    int boolean;
+    char *texto;
+}
+
+
 %token TOKEN_ERROR
 
 %token RETURN IF ELSE WHILE VOID
-%token INTEGER BOOLEAN FLOAT ID
-%token TYPE
+%token <entero> INTEGER <boolean> BOOLEAN <flotante> FLOAT <texto> ID
+%token <texto> TYPE
 
 %token SUMA RESTA MULTIPLICACION DIVISION MODULO
 %token AND OR
@@ -110,11 +118,11 @@ expression_list:
     ;
 
 expression:
-    ID                             { printf("ID\n"); }
+    ID                             { printf("ID (%s)\n", $1); }
     | method_call
-    | INTEGER                      { printf("INTEGER\n"); }
-    | BOOLEAN                      { printf("BOOLEAN\n"); }
-    | FLOAT                        { printf("FLOAT\n"); }
+    | INTEGER                      { printf("INTEGER (%d)\n", $1); }
+    | BOOLEAN                      { printf("BOOLEAN (%d)\n", $1); }
+    | FLOAT                        { printf("FLOAT (%f)\n", $1); }
 
     | expression SUMA expression           { printf("suma\n"); }
     | expression RESTA expression          { printf("resta\n"); }

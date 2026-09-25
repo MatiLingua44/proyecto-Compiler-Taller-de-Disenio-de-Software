@@ -1,8 +1,0 @@
-int a;
-int x = 0;
-float b;
-b = 10.2;
-bool y = true;
-y = y && false;
-a = (1 + x) * 3;
-y = !true;

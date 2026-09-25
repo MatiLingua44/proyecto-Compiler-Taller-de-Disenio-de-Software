@@ -3,8 +3,6 @@
 #include <stdlib.h>
 
 extern int yylex();
-extern int yyparse();
-extern FILE *yyin;
 
 void yyerror(const char *s);
 %}
@@ -12,10 +10,10 @@ void yyerror(const char *s);
 %locations
 
 %union {
-    int entero;
+    int   entero;
     float flotante;
-    int boolean;
-    char *texto;
+    int   boolean;
+    char  *texto;
 }
 
 
@@ -89,8 +87,8 @@ statement_or_decl:
 statement:
     ID '=' expression ';' { printf("ASIGNACION\n"); }
     | method_call ';'
-    | IF '(' expression ')' block %prec LOWER_THAN_ELSE
-    | IF '(' expression ')' block ELSE block
+    | IF '(' expression ')' block %prec LOWER_THAN_ELSE { printf("IF\n"); }
+    | IF '(' expression ')' block ELSE block            { printf("IF/ELSE\n"); }
     | WHILE '(' expression ')' block
     | RETURN expression ';'
     | RETURN ';'
@@ -145,25 +143,4 @@ expression:
 void yyerror(const char *s) {
     fprintf(stderr, "Error Sintactico en la linea %d, columna %d: %s\n", 
             yylloc.first_line, yylloc.first_column, s);
-}
-
-int main(int argc, char **argv) {
-    // Verificamos si el usuario pasó el nombre del archivo como argumento
-    if (argc < 2) {
-        fprintf(stderr, "Uso: %s <archivo_de_entrada>\n", argv[0]);
-        return 1;
-    }
-
-    // Abrimos el archivo en modo lectura
-    yyin = fopen(argv[1], "r");
-    if (!yyin) {
-        perror("Error al abrir el archivo");
-        return 1;
-    }
-
-    // Ejecutamos el analizador
-    yyparse();
-
-    fclose(yyin); // Cerramos el archivo
-    return 0;
 }

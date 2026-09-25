@@ -12,5 +12,5 @@ flex lex.l
 
 echo "[GCC] Compilando binarios..."
 # gcc -Wall -Wextra -g -o compilador main.c bison.tab.c lex.yy.c ast.c lista.c semantica.c assembly.c
-gcc -Wall -Wextra -g -o compilador bison.tab.c lex.yy.c
+gcc -Wall -Wextra -g -o compilador main.c bison.tab.c lex.yy.c
 echo "✅ Compilacion exitosa."

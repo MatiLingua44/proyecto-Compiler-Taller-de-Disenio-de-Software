@@ -1,0 +1,28 @@
+int suma(int a, int b) {
+    return a + b;
+}
+
+void main() {
+    int total;
+    int i;
+    boolean activo;
+
+    total = 0;
+    i = 10;
+    activo = true;
+
+    while (i > 0) {
+        total = suma(total, i);
+        i = i - 1;
+    }
+
+    if (total > 50) {
+        int extra;
+        extra = 5;
+        total = total + extra;
+    } else {
+        total = 0;
+    }
+
+    return;
+}

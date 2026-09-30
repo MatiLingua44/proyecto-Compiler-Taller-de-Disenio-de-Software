@@ -5,5 +5,8 @@ lex.yy.c
 
 # Ejecutable
 compilador
+c-tds
 *.exe
 *.o
+*.dot
+*.png

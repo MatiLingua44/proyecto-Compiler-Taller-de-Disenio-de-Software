@@ -1,21 +1,37 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "tabla_simbolos.h"
+#include "ast.h"
 
-extern int yylex();
-
+extern int yylex(void);
+extern int yylineno;
 void yyerror(const char *s);
+
+// Puntero global a la tabla de símbolos
+extern TablaSimbolos *tabla_simbolos;
+
+// Puntero al método actual que se está analizando
+static Simbolo *metodo_actual = NULL;
 %}
+
+%code requires {
+    #include "tabla_simbolos.h"
+    #include "ast.h"
+}
 
 %locations
 
 %union {
-    int   entero;
-    float flotante;
-    int   boolean;
-    char  *texto;
+    int          entero;
+    float        flotante;
+    int          boolean;
+    char        *texto;
+    NodoAST     *nodo;
+    Simbolo     *simbolo;
+    ListaIDs    *lista_ids;
 }
-
 
 %token TOKEN_ERROR
 
@@ -38,6 +54,12 @@ void yyerror(const char *s);
 %left MULTIPLICACION DIVISION MODULO
 %nonassoc '!' MENOS_UNARIO
 
+/* --- TIPOS DE NO-TERMINALES --- */
+%type <simbolo> method_header method_decl
+%type <nodo> function_block block statement_or_decl statements_list statement
+%type <nodo> expression method_call expression_list expression_list_items
+%type <lista_ids> variable_list
+
 %%
 
 program:
@@ -56,90 +78,216 @@ line:
     ;
 
 method_decl:
-    TYPE ID '(' parameters_list ')' block { printf("declaracion de metodo\n"); }
-    | VOID ID '(' parameters_list ')' block { printf("declaracion de metodo con retorno void\n"); }
+    method_header '(' parameters_list ')' function_block {
+        if ($1 != NULL) {
+            $1->ast = $5;
+        }
+        CerrarNivel(tabla_simbolos);
+        metodo_actual = NULL;
+        $$ = $1;
+    }
+    ;
+
+method_header:
+    TYPE ID {
+        TipoDato td = StringATipoDato($1);
+        free($1);
+        Simbolo *s = InsertarSimbolo(tabla_simbolos, $2, FLAG_FUNCION, td, @2.first_line, @2.first_column);
+        AbrirNivel(tabla_simbolos); // Nivel 2: parámetros y variables del método
+        metodo_actual = s;
+        free($2);
+        $$ = s;
+    }
+    | VOID ID {
+        Simbolo *s = InsertarSimbolo(tabla_simbolos, $2, FLAG_FUNCION, TIPO_VOID, @2.first_line, @2.first_column);
+        AbrirNivel(tabla_simbolos); // Nivel 2: parámetros y variables del método
+        metodo_actual = s;
+        free($2);
+        $$ = s;
+    }
     ;
 
 parameters_list:
     /* vacío */
-    | variable_declr_list { printf("lista de parametros\n"); }
+    | variable_declr_list
     ;
 
 variable_declr_list:
-    TYPE ID
-    | variable_declr_list ',' TYPE ID
+    param_item
+    | variable_declr_list ',' param_item
     ;
 
+param_item:
+    TYPE ID {
+        TipoDato td = StringATipoDato($1);
+        free($1);
+        if (metodo_actual != NULL) {
+            InsertarSimbolo(tabla_simbolos, $2, FLAG_PARAMETRO, td, @2.first_line, @2.first_column);
+            AgregarParametroAFuncion(metodo_actual, $2, td);
+        }
+        free($2);
+    }
+    ;
+
+// Bloque principal de la función (el nivel ya fue abierto por method_header)
+function_block:
+    '{' statements_list '}' {
+        $$ = $2;
+    }
+    ;
+
+// Bloque interno o bloque de control (abre y cierra un nuevo nivel local)
 block:
-    '{' statements_list '}' { printf("BLOQUE\n"); }
+    '{' { AbrirNivel(tabla_simbolos); } statements_list '}' {
+        CerrarNivel(tabla_simbolos);
+        $$ = $3;
+    }
     ;
 
 statements_list:
-    /* vacío */
-    | statements_list statement_or_decl
+    /* vacío */ {
+        $$ = NULL;
+    }
+    | statements_list statement_or_decl {
+        if ($2 != NULL) {
+            $$ = concatenar_sentencias($1, $2);
+        } else {
+            $$ = $1;
+        }
+    }
     ;
 
 statement_or_decl:
-    variable_declr
-    | statement
+    variable_declr {
+        $$ = NULL; // Las declaraciones se registran en la TS pero no generan nodos de sentencia en el AST
+    }
+    | statement {
+        $$ = $1;
+    }
     ;
 
 statement:
-    ID '=' expression ';' { printf("ASIGNACION\n"); }
-    | method_call ';'
-    | IF '(' expression ')' block %prec LOWER_THAN_ELSE { printf("IF\n"); }
-    | IF '(' expression ')' block ELSE block            { printf("IF/ELSE\n"); }
-    | WHILE '(' expression ')' block
-    | RETURN expression ';'
-    | RETURN ';'
-    | ';'
-    | block
+    ID '=' expression ';' {
+        Simbolo *s = BuscarSimbolo(tabla_simbolos, $1);
+        NodoAST *var_nodo = crear_nodo_var(s, @1.first_line, @1.first_column);
+        $$ = crear_nodo_asignacion(var_nodo, $3, @2.first_line, @2.first_column);
+        free($1);
+    }
+    | method_call ';' {
+        $$ = $1;
+    }
+    | IF '(' expression ')' block %prec LOWER_THAN_ELSE {
+        $$ = crear_nodo_if($3, $5, NULL, @1.first_line, @1.first_column);
+    }
+    | IF '(' expression ')' block ELSE block {
+        $$ = crear_nodo_if($3, $5, $7, @1.first_line, @1.first_column);
+    }
+    | WHILE expression block {
+        $$ = crear_nodo_while($2, $3, @1.first_line, @1.first_column);
+    }
+    | RETURN expression ';' {
+        $$ = crear_nodo_return($2, @1.first_line, @1.first_column);
+    }
+    | RETURN ';' {
+        $$ = crear_nodo_return(NULL, @1.first_line, @1.first_column);
+    }
+    | ';' {
+        $$ = NULL;
+    }
+    | block {
+        $$ = $1;
+    }
     ;
 
 variable_declr:
-    TYPE variable_list ';' { printf("DECLARACION DE VARIABLE\n"); }
+    TYPE variable_list ';' {
+        TipoDato td = StringATipoDato($1);
+        free($1);
+        NodoID *curr = $2->primero;
+        while (curr != NULL) {
+            InsertarSimbolo(tabla_simbolos, curr->nombre, FLAG_VARIABLE, td, curr->linea, curr->columna);
+            curr = curr->sig;
+        }
+        liberar_lista_ids($2);
+    }
     ;
 
 variable_list:
-    ID                     { printf("DECLARACION DE VARIABLE SIMPLE\n"); }
-    | variable_list ',' ID { printf("DECLARACION DE VARIABLE MULTIPLE\n"); }
+    ID {
+        $$ = crear_lista_ids($1, @1.first_line, @1.first_column);
+        free($1);
+    }
+    | variable_list ',' ID {
+        $$ = agregar_id_a_lista($1, $3, @3.first_line, @3.first_column);
+        free($3);
+    }
     ;
 
 method_call:
-    ID '(' expression_list ')' { printf("LLAMADA A METODO\n"); }
+    ID '(' expression_list ')' {
+        Simbolo *s = BuscarSimbolo(tabla_simbolos, $1);
+        $$ = crear_nodo_llamada_stmt(s, $3, @1.first_line, @1.first_column);
+        free($1);
+    }
     ;
 
 expression_list:
-    /* vacío */
-    | expression               { printf("LISTA DE EXPRESIONES\n"); }
-    | expression_list ',' expression { printf("LISTA DE EXPRESIONES MULTIPLES\n"); }
+    /* vacío */ {
+        $$ = NULL;
+    }
+    | expression_list_items {
+        $$ = $1;
+    }
+    ;
+
+expression_list_items:
+    expression {
+        $$ = crear_nodo_lista_args($1, NULL);
+    }
+    | expression_list_items ',' expression {
+        $$ = agregar_arg_a_lista($1, $3);
+    }
     ;
 
 expression:
-    ID                             { printf("ID (%s)\n", $1); }
-    | method_call
-    | INTEGER                      { printf("INTEGER (%d)\n", $1); }
-    | BOOLEAN                      { printf("BOOLEAN (%d)\n", $1); }
-    | FLOAT                        { printf("FLOAT (%f)\n", $1); }
+    ID {
+        Simbolo *s = BuscarSimbolo(tabla_simbolos, $1);
+        $$ = crear_nodo_var(s, @1.first_line, @1.first_column);
+        free($1);
+    }
+    | ID '(' expression_list ')' {
+        Simbolo *s = BuscarSimbolo(tabla_simbolos, $1);
+        $$ = crear_nodo_expr_llamada(s, $3, @1.first_line, @1.first_column);
+        free($1);
+    }
+    | INTEGER {
+        $$ = crear_nodo_literal_int($1, @1.first_line, @1.first_column);
+    }
+    | BOOLEAN {
+        $$ = crear_nodo_literal_bool($1, @1.first_line, @1.first_column);
+    }
+    | FLOAT {
+        $$ = crear_nodo_literal_float($1, @1.first_line, @1.first_column);
+    }
 
-    | expression SUMA expression           { printf("suma\n"); }
-    | expression RESTA expression          { printf("resta\n"); }
-    | expression MULTIPLICACION expression { printf("multiplicacion\n"); }
-    | expression DIVISION expression       { printf("division\n"); }
-    | expression MODULO expression         { printf("modulo\n"); }
-    | expression AND expression            { printf("AND\n"); }
-    | expression OR expression             { printf("OR\n"); }
-    | expression MENOR expression          { printf("MENOR\n"); }
-    | expression MAYOR expression          { printf("MAYOR\n"); }
-    | expression IGUALDAD expression       { printf("IGUALDAD\n"); }
+    | expression SUMA expression           { $$ = crear_nodo_binario(OP_SUMA, $1, $3, @2.first_line, @2.first_column); }
+    | expression RESTA expression          { $$ = crear_nodo_binario(OP_RESTA, $1, $3, @2.first_line, @2.first_column); }
+    | expression MULTIPLICACION expression { $$ = crear_nodo_binario(OP_MULT, $1, $3, @2.first_line, @2.first_column); }
+    | expression DIVISION expression       { $$ = crear_nodo_binario(OP_DIV, $1, $3, @2.first_line, @2.first_column); }
+    | expression MODULO expression         { $$ = crear_nodo_binario(OP_MOD, $1, $3, @2.first_line, @2.first_column); }
+    | expression AND expression            { $$ = crear_nodo_binario(OP_AND, $1, $3, @2.first_line, @2.first_column); }
+    | expression OR expression             { $$ = crear_nodo_binario(OP_OR, $1, $3, @2.first_line, @2.first_column); }
+    | expression MENOR expression          { $$ = crear_nodo_binario(OP_MENOR, $1, $3, @2.first_line, @2.first_column); }
+    | expression MAYOR expression          { $$ = crear_nodo_binario(OP_MAYOR, $1, $3, @2.first_line, @2.first_column); }
+    | expression IGUALDAD expression       { $$ = crear_nodo_binario(OP_IGUAL, $1, $3, @2.first_line, @2.first_column); }
 
-    | RESTA expression %prec MENOS_UNARIO { printf("menos expresion\n"); }
-    | '!' expression                      { printf("expresion negada\n"); }
-    | '(' expression ')'                  { printf("expresion entre parentesis\n"); }
+    | RESTA expression %prec MENOS_UNARIO { $$ = crear_nodo_unario(OP_MENOS_UNARIO, $2, @1.first_line, @1.first_column); }
+    | '!' expression                      { $$ = crear_nodo_unario(OP_NEGACION, $2, @1.first_line, @1.first_column); }
+    | '(' expression ')'                  { $$ = $2; }
     ;
+
 %%
 
-// Implementación de yyerror usando la variable global yylloc de Bison
 void yyerror(const char *s) {
     fprintf(stderr, "Error Sintactico en la linea %d, columna %d: %s\n", 
             yylloc.first_line, yylloc.first_column, s);

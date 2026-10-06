@@ -11,7 +11,10 @@ Lingua Matias
 - gcc
 - graphviz (Opcional, para obtener graficos del arbol)
 
+
+
 # Cómo compilar
+
 # windows 
 Abrir la terminal en el path del proyecto y correr el sigiente comando:
 

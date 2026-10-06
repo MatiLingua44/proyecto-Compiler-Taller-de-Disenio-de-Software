@@ -9,11 +9,9 @@ Lingua Matias
 - flex
 - bison
 - gcc
+- graphviz (Opcional, para obtener graficos del arbol)
 
-# Opcional para obtener graficos del arbol
-- graphviz
-
-
+# Cómo compilar
 # windows 
 Abrir la terminal en el path del proyecto y correr el sigiente comando:
 

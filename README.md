@@ -25,6 +25,6 @@ Lingua Matias
 
 ### En Windows:
 ```cmd
-compiler.bat
-compilador.exe programs\corrects\slide_ejemplo.txt
+./compiler.bat
+./compilador programs/corrects/slide_ejemplo.txt
 ```

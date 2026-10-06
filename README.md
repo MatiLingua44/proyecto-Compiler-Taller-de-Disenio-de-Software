@@ -1,4 +1,6 @@
-# compiler-Taller-de-Disenio-de-Software
+# Compilador C-TDS — Taller de Diseño de Software
+
+Compilador para el lenguaje **C-TDS**, desarrollado en C utilizando **Flex** y **Bison**.
 # Integrantes del Grupo
 Trimboli Ricardo,
 Dosantos Agustin,
@@ -13,22 +15,16 @@ Lingua Matias
 
 
 
-# Cómo compilar
+## Compilación y Ejecución
 
-# windows 
-Abrir la terminal en el path del proyecto y correr el sigiente comando:
+### En Linux:
+```bash
+./compiler.sh
+./compilador programs/corrects/slide_ejemplo.txt
+```
 
-- ./compiler
-
-# linux
-Si es la primera vez que se va a compilar el proyecto hay que darle permiso al archivo compilar.sh con el siguiente comando:
-
-- chmod +x compiler.sh
-
-Solamente hay que dar permiso una vez, despues simplemente correr el siguiente comando en la terminal desde la raiz del proyecto:
-
-- ./compiler.sh
-
-# EJECUCION
-Para correr archivos de prueba, usar el siguiente comando de ejemplo:
-- ./compilador programs/corrects/slide_ejemplo.txt
+### En Windows:
+```cmd
+compiler.bat
+compilador.exe programs\corrects\slide_ejemplo.txt
+```

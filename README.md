@@ -18,6 +18,11 @@ Lingua Matias
 ## Compilación y Ejecución
 
 ### En Linux:
+Si es la primera vez que se va a compilar el proyecto hay que darle permiso al archivo compilar.sh con el siguiente comando:
+```bash
+chmod +x compiler.sh
+```
+Una vez ejecutado el comando compilar y probar con:
 ```bash
 ./compiler.sh
 ./compilador programs/corrects/slide_ejemplo.txt

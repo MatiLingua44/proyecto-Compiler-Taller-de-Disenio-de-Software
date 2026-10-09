@@ -1,0 +1,12 @@
+void main() {
+    int a;
+    boolean b;
+
+    a = true; // Error Regla 13: asignar boolean a int
+
+    if (10) { // Error Regla 9: condicion no es boolean
+        a = 1;
+    }
+
+    return 5; // Error Regla 6: metodo void retornando valor
+}

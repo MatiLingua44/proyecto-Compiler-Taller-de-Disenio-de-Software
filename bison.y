@@ -4,6 +4,7 @@
 #include <string.h>
 #include "tabla_simbolos.h"
 #include "ast.h"
+#include "semantica.h"
 
 extern int yylex(void);
 extern int yylineno;
@@ -64,7 +65,10 @@ static Simbolo *metodo_actual = NULL;
 
 program:
     /* vacío */
-    | lines
+    | lines {
+        // Regla 3: Verificar que el programa contiene la definición de main()
+        verificar_programa(tabla_simbolos);
+    }
     ;
 
 lines:
@@ -169,6 +173,11 @@ statement_or_decl:
 statement:
     ID '=' expression ';' {
         Simbolo *s = BuscarSimbolo(tabla_simbolos, $1);
+        if (s == NULL) {
+            sem_error(@1.first_line, @1.first_column, "Regla 2: Variable '%s' no declarada antes de su uso.", $1);
+        } else if (s->flag == FLAG_FUNCION) {
+            sem_error(@1.first_line, @1.first_column, "Regla 8: No se puede asignar al identificador '%s' porque es un metodo.", $1);
+        }
         NodoAST *var_nodo = crear_nodo_var(s, @1.first_line, @1.first_column);
         $$ = crear_nodo_asignacion(var_nodo, $3, @2.first_line, @2.first_column);
         free($1);
@@ -226,6 +235,11 @@ variable_list:
 method_call:
     ID '(' expression_list ')' {
         Simbolo *s = BuscarSimbolo(tabla_simbolos, $1);
+        if (s == NULL) {
+            sem_error(@1.first_line, @1.first_column, "Regla 2: Metodo '%s' no declarado antes de su uso.", $1);
+        } else if (s->flag != FLAG_FUNCION) {
+            sem_error(@1.first_line, @1.first_column, "El identificador '%s' no es un metodo.", $1);
+        }
         $$ = crear_nodo_llamada_stmt(s, $3, @1.first_line, @1.first_column);
         free($1);
     }
@@ -252,11 +266,21 @@ expression_list_items:
 expression:
     ID {
         Simbolo *s = BuscarSimbolo(tabla_simbolos, $1);
+        if (s == NULL) {
+            sem_error(@1.first_line, @1.first_column, "Regla 2: Variable '%s' no declarada antes de su uso.", $1);
+        } else if (s->flag == FLAG_FUNCION) {
+            sem_error(@1.first_line, @1.first_column, "El identificador '%s' es un metodo, no una variable.", $1);
+        }
         $$ = crear_nodo_var(s, @1.first_line, @1.first_column);
         free($1);
     }
     | ID '(' expression_list ')' {
         Simbolo *s = BuscarSimbolo(tabla_simbolos, $1);
+        if (s == NULL) {
+            sem_error(@1.first_line, @1.first_column, "Regla 2: Metodo '%s' no declarado antes de su uso.", $1);
+        } else if (s->flag != FLAG_FUNCION) {
+            sem_error(@1.first_line, @1.first_column, "El identificador '%s' no es un metodo.", $1);
+        }
         $$ = crear_nodo_expr_llamada(s, $3, @1.first_line, @1.first_column);
         free($1);
     }

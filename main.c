@@ -1,7 +1,8 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include "ast.h"
 
 // Declaramos los elementos externos de Flex y Bison
+ASTNode *root = NULL;
 extern int yyparse(void);
 extern FILE *yyin; // Puntero de archivo que lee Flex
 

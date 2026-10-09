@@ -11,6 +11,7 @@ if %errorlevel% neq 0 (echo ❌ Error en Flex && exit /b %errorlevel%)
 
 echo [GCC] Compilando binarios...
 @REM  gcc -Wall -Wextra -g -o compilador main.c bison.tab.c lex.yy.c ast.c lista.c semantica.c assembly.c
-gcc -Wall -Wextra -g -o compilador main.c bison.tab.c lex.yy.c
+@REM  gcc -Wall -Wextra -g -o compilador main.c bison.tab.c lex.yy.c ast.c
+gcc -g -o compilador main.c bison.tab.c lex.yy.c ast.c
 if %errorlevel% neq 0 (echo ❌ Error en GCC && exit /b %errorlevel%)
 echo Compilacion exitosa.

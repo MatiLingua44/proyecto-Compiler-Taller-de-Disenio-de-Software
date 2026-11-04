@@ -4,6 +4,8 @@
 #include "tabla_simbolos.h"
 #include "ast.h"
 #include "semantica.h"
+#include "codigo_intermedio.h"
+#include "generador_assembler.h"
 
 // Variables y funciones externas de Flex / Bison
 extern int yyparse(void);
@@ -22,10 +24,48 @@ char *archivo_dot = NULL;
 static void imprimir_uso(const char *prog) {
     fprintf(stderr, "Uso: %s [opcion] <archivo_fuente>\n", prog);
     fprintf(stderr, "Opciones:\n");
-    fprintf(stderr, "  -debug               Imprime informacion de depuracion (TS, AST y genera ast.dot/ast.png).\n");
+    fprintf(stderr, "  -debug               Imprime informacion de depuracion (TS, AST, Arbol Reescrito, IR, Assembler y graficos).\n");
     fprintf(stderr, "  -dot [archivo.dot]   Genera el archivo Graphviz DOT para visualizar el AST.\n");
-    fprintf(stderr, "  -target <etapa>      Fase hasta la que procede la compilacion (scan, parse, sem, etc.).\n");
-    fprintf(stderr, "  -o <salida>          Nombre del archivo de salida.\n");
+    fprintf(stderr, "  -target <etapa>      Fase hasta la que procede la compilacion (scan, parse, sem, ir/3ac, asm).\n");
+    fprintf(stderr, "  -o <salida>          Nombre del archivo de salida (.s para assembler, o archivo IR).\n");
+}
+
+static void obtener_nombre_archivo_asm(const char *entrada, char *salida, size_t max_len) {
+    if (!entrada || !salida) return;
+    const char *base = entrada;
+    const char *p = entrada;
+    while (*p) {
+        if (*p == '/' || *p == '\\') {
+            base = p + 1;
+        }
+        p++;
+    }
+    const char *punto = strrchr(base, '.');
+    if (punto != NULL) {
+        size_t len = (size_t)(punto - base);
+        snprintf(salida, max_len, "%.*s.s", (int)len, base);
+    } else {
+        snprintf(salida, max_len, "%s.s", base);
+    }
+}
+
+static void obtener_nombre_ejecutable(const char *archivo_asm, char *salida, size_t max_len) {
+    if (!archivo_asm || !salida) return;
+    const char *base = archivo_asm;
+    const char *p = archivo_asm;
+    while (*p) {
+        if (*p == '/' || *p == '\\') {
+            base = p + 1;
+        }
+        p++;
+    }
+    const char *punto = strrchr(base, '.');
+    if (punto != NULL && strcmp(punto, ".s") == 0) {
+        size_t len = (size_t)(punto - base);
+        snprintf(salida, max_len, "%.*s", (int)len, base);
+    } else {
+        snprintf(salida, max_len, "%s.out", base);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -84,7 +124,7 @@ int main(int argc, char *argv[]) {
 
     if (modo_debug) {
         printf("============================================================\n");
-        printf("Compilador C-TDS - Analizador Semantico\n");
+        printf("Compilador C-TDS - Analizador Semantico y Generador de Codigo\n");
         printf("Iniciando compilacion de '%s'...\n", archivo_entrada);
         printf("============================================================\n");
     }
@@ -103,6 +143,78 @@ int main(int argc, char *argv[]) {
 
     // Total de errores semánticos detectados (en TS + en reglas de semántica)
     int cant_errores = obtener_cant_errores_semanticos() + tabla_simbolos->total_errores;
+
+    // 4. Si el análisis sintáctico y semántico fue exitoso, generar Código Intermedio (3 Direcciones)
+    CodigoIntermedio *ci = NULL;
+    char archivo_asm[512] = {0};
+
+    if (resultado_parse == 0 && cant_errores == 0) {
+        int detener_en_frontend = 0;
+        if (target_etapa != NULL) {
+            if (strcmp(target_etapa, "scan") == 0 ||
+                strcmp(target_etapa, "parse") == 0 ||
+                strcmp(target_etapa, "sem") == 0 ||
+                strcmp(target_etapa, "ast") == 0) {
+                detener_en_frontend = 1;
+            }
+        }
+
+        if (!detener_en_frontend) {
+            ci = generar_codigo_intermedio(tabla_simbolos);
+
+            // Verificar si el objetivo termina en Código Intermedio (IR / 3AC)
+            if (target_etapa != NULL && (strcmp(target_etapa, "ir") == 0 ||
+                                         strcmp(target_etapa, "3ac") == 0 ||
+                                         strcmp(target_etapa, "tac") == 0)) {
+                if (archivo_salida != NULL) {
+                    FILE *f_salida = fopen(archivo_salida, "w");
+                    if (!f_salida) {
+                        fprintf(stderr, "Error al abrir archivo de salida '%s': ", archivo_salida);
+                        perror("");
+                    } else {
+                        imprimir_codigo_intermedio(ci, f_salida);
+                        fclose(f_salida);
+                        if (modo_debug) {
+                            printf("[IR] Codigo de tres direcciones guardado exitosamente en: %s\n", archivo_salida);
+                        }
+                    }
+                } else {
+                    imprimir_codigo_intermedio(ci, stdout);
+                }
+            } else {
+                // 5. Generación de Código Objeto Ensamblador x86-64
+                if (archivo_salida != NULL) {
+                    strncpy(archivo_asm, archivo_salida, sizeof(archivo_asm) - 1);
+                } else {
+                    obtener_nombre_archivo_asm(archivo_entrada, archivo_asm, sizeof(archivo_asm));
+                }
+
+                // Generar y guardar el archivo .s en disco
+                exportar_archivo_assembler(ci, tabla_simbolos, archivo_asm, archivo_entrada);
+
+                // Si no está en modo debug, mostrar el código assembler en la terminal
+                if (!modo_debug) {
+                    if (target_etapa != NULL && (strcmp(target_etapa, "asm") == 0 || strcmp(target_etapa, "codegen") == 0)) {
+                        generar_codigo_assembler(ci, tabla_simbolos, stdout, archivo_entrada);
+                    } else {
+                        char ejecutable[256];
+                        obtener_nombre_ejecutable(archivo_asm, ejecutable, sizeof(ejecutable));
+
+                        printf("======================================================================\n");
+                        printf("                 CODIGO ASSEMBLER GENERADO (x86-64)\n");
+                        printf("======================================================================\n\n");
+                        generar_codigo_assembler(ci, tabla_simbolos, stdout, archivo_entrada);
+                        printf("\n======================================================================\n");
+                        printf("✅ Archivo assembler generado exitosamente: %s\n", archivo_asm);
+                        printf("Para compilarlo con GCC y ejecutarlo:\n");
+                        printf("    gcc %s -o %s\n", archivo_asm, ejecutable);
+                        printf("    ./%s\n", ejecutable);
+                        printf("======================================================================\n");
+                    }
+                }
+            }
+        }
+    }
 
     // Si se activó -debug y no se especificó nombre para dot, usar ast.dot por defecto
     if (modo_debug && !archivo_dot) {
@@ -133,10 +245,45 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Si se activó -debug, imprimir la Tabla de Símbolos y los Árboles AST
+    // Si se activó -debug y se generó código intermedio, generar visualización DOT del árbol reescrito
+    if (modo_debug && ci != NULL) {
+        generar_ci_dot(ci, "ir.dot");
+        printf("[Graphviz] Archivo DOT del Codigo Intermedio generado: ir.dot\n");
+        if (system("dot -Tpng ir.dot -o ir.png 2>/dev/null") == 0) {
+            printf("[Graphviz] Imagen del Codigo Intermedio generada exitosamente: ir.png\n");
+        }
+    }
+
+    // Si se activó -debug, imprimir la Tabla de Símbolos, AST, Árboles Reescritos, Instrucciones 3D y Assembler
     if (modo_debug) {
         ImprimirTS(tabla_simbolos);
         imprimir_ast_todos_los_metodos(tabla_simbolos);
+
+        if (ci != NULL) {
+            imprimir_arbol_reescrito_todos(ci, stdout);
+
+            printf("======================================================================\n");
+            printf("        SECUENCIA LINEAL DE CODIGO DE TRES DIRECCIONES (3AC)\n");
+            printf("======================================================================\n\n");
+            imprimir_codigo_intermedio(ci, stdout);
+            printf("======================================================================\n");
+
+            if (archivo_asm[0] != '\0') {
+                char ejecutable[256];
+                obtener_nombre_ejecutable(archivo_asm, ejecutable, sizeof(ejecutable));
+
+                printf("======================================================================\n");
+                printf("                 CODIGO ASSEMBLER GENERADO (x86-64)\n");
+                printf("======================================================================\n\n");
+                generar_codigo_assembler(ci, tabla_simbolos, stdout, archivo_entrada);
+                printf("\n======================================================================\n");
+                printf("✅ Archivo assembler guardado exitosamente en: %s\n", archivo_asm);
+                printf("Para compilarlo con GCC y ejecutarlo:\n");
+                printf("    gcc %s -o %s\n", archivo_asm, ejecutable);
+                printf("    ./%s\n", ejecutable);
+                printf("======================================================================\n");
+            }
+        }
 
         if (resultado_parse == 0 && cant_errores == 0) {
             printf("\n✅ Compilacion exitosa: sin errores sintacticos ni semanticos.\n");
@@ -150,6 +297,9 @@ int main(int argc, char *argv[]) {
     fclose(archivo);
 
     // Liberar memoria
+    if (ci != NULL) {
+        liberar_codigo_intermedio(ci);
+    }
     LiberarTS(tabla_simbolos);
 
     // Salida según la especificación: código 0 si fue exitoso, 1 si hubo algún error

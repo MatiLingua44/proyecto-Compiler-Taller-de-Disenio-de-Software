@@ -28,6 +28,13 @@ TablaSimbolos* InicializarTS(void) {
     ts->historial_niveles = nivel_global;
     ts->total_errores = 0;
 
+    // Funciones de biblioteca estándar de la cátedra (Tutorial Code Assembly Generation)
+    Simbolo *s_print = InsertarSimbolo(ts, "printInt", FLAG_FUNCION, TIPO_VOID, 0, 0);
+    if (s_print) {
+        AgregarParametroAFuncion(s_print, "x", TIPO_INT);
+    }
+    InsertarSimbolo(ts, "get_int", FLAG_FUNCION, TIPO_INT, 0, 0);
+
     return ts;
 }
 

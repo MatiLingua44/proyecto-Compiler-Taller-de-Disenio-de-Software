@@ -1,0 +1,15 @@
+void saludar() {
+    return;
+}
+
+int suma(int x, int y) {
+    return x + y;
+}
+
+void main() {
+    int res;
+    res = suma(1);          // Error Regla 4: cantidad incorrecta de argumentos
+    res = suma(1, true);    // Error Regla 4: tipo incorrecto de argumento 2
+    res = saludar() + 1;    // Error Regla 5: funcion void usada en expresion
+    return;
+}

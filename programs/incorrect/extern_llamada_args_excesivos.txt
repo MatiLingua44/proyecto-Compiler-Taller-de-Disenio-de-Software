@@ -1,0 +1,6 @@
+extern void print_val(int x);
+
+int main() {
+    print_val(10, 20); // Error: se esperaba 1 argumento, se pasaron 2
+    return 0;
+}

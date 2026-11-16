@@ -1,0 +1,13 @@
+int x;
+
+int f(int p1) {
+    x = 1;
+    return p1 + x;
+}
+
+void main() {
+    int x;
+    x = 1;
+    x = x + 1;
+    return;
+}

@@ -2,8 +2,14 @@
 bison.tab.c
 bison.tab.h
 lex.yy.c
+slide_ejemplo
 
 # Ejecutable
 compilador
+c-tds
 *.exe
 *.o
+*.dot
+*.png
+*.md
+*.s

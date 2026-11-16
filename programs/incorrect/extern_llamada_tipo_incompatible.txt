@@ -1,0 +1,9 @@
+extern void print_val(int x);
+extern int check(boolean flag);
+
+int main() {
+    int r;
+    print_val(true); // Error Regla 4: se esperaba int, recibido boolean
+    r = check(42);    // Error Regla 4: se esperaba boolean, recibido int
+    return 0;
+}

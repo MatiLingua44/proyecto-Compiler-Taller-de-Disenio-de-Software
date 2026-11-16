@@ -1,0 +1,14 @@
+extern int sumar(int, int);
+extern boolean verificar(int, boolean);
+extern void mostrar(int);
+
+int main() {
+    int r;
+    boolean b;
+    r = sumar(15, 25);
+    b = verificar(r, true);
+    if (b) {
+        mostrar(r);
+    }
+    return 0;
+}

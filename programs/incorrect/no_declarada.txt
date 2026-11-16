@@ -1,0 +1,4 @@
+void main() {
+    z = 10; // Error: 'z' no ha sido declarada
+    return;
+}

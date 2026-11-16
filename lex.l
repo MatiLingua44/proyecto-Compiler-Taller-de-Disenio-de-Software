@@ -1,6 +1,8 @@
 %{
 #include <stdio.h>
 #include <string.h>
+#include "tabla_simbolos.h"
+#include "ast.h"
 #include "bison.tab.h"
 
 int commentary_counter = 0; /* Contador para comentarios anidados */
@@ -29,9 +31,12 @@ TYPE "int"|"boolean"|"float"
 
 %option yylineno
 %option noyywrap
+%option nounput
+%option noinput
 
 /* Reglas básicas de ejemplo */
 %%
+"extern"                return EXTERN;
 "return"                return RETURN;
 "if"                    return IF;
 "else"                  return ELSE;

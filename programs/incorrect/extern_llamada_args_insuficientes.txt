@@ -1,0 +1,7 @@
+extern int suma3(int a, int b, int c);
+
+int main() {
+    int res;
+    res = suma3(10, 20); // Error: se esperaban 3 argumentos, se pasaron 2
+    return 0;
+}

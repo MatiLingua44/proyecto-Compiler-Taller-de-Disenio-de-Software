@@ -1,0 +1,8 @@
+int x;
+int x; // Error: redeclarada en ambito global
+
+void main() {
+    int y;
+    int y; // Error: redeclarada en ambito local
+    return;
+}

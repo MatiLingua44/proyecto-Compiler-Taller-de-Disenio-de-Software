@@ -28,13 +28,6 @@ TablaSimbolos* InicializarTS(void) {
     ts->historial_niveles = nivel_global;
     ts->total_errores = 0;
 
-    // Funciones de biblioteca estándar de la cátedra (Tutorial Code Assembly Generation)
-    Simbolo *s_print = InsertarSimbolo(ts, "printInt", FLAG_FUNCION, TIPO_VOID, 0, 0);
-    if (s_print) {
-        AgregarParametroAFuncion(s_print, "x", TIPO_INT);
-    }
-    InsertarSimbolo(ts, "get_int", FLAG_FUNCION, TIPO_INT, 0, 0);
-
     return ts;
 }
 
@@ -117,6 +110,7 @@ Simbolo* InsertarSimbolo(TablaSimbolos *ts, const char *nombre, TipoSimbolo flag
     nuevo->parametros = NULL;
     nuevo->cant_parametros = 0;
     nuevo->ast = NULL;
+    nuevo->es_externo = 0;
     memset(&(nuevo->valor), 0, sizeof(nuevo->valor));
 
     // Insertar al final de la lista del nivel para mantener el orden de declaración
@@ -262,6 +256,9 @@ void ImprimirSimbolo(const Simbolo *s) {
             p = p->sig;
         }
         printf(") [AST: %s]", s->ast ? "si" : "no");
+        if (s->es_externo) {
+            printf(" [extern]");
+        }
     }
     printf("\n");
 }

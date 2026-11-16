@@ -36,6 +36,7 @@ TYPE "int"|"boolean"|"float"
 
 /* Reglas básicas de ejemplo */
 %%
+"extern"                return EXTERN;
 "return"                return RETURN;
 "if"                    return IF;
 "else"                  return ELSE;

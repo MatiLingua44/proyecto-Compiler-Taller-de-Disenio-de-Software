@@ -1,0 +1,7 @@
+extern void ejecutar(int x);
+
+int main() {
+    int res;
+    res = ejecutar(10) + 5; // Error Regla 5: funcion void usada en expresion
+    return 0;
+}

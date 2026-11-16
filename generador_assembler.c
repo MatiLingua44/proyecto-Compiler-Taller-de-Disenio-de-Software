@@ -633,6 +633,7 @@ static void generar_rutinas_auxiliares(const CodigoIntermedio *ci, FILE *salida)
         fprintf(salida, "\n    # ------------------------------------------------------------------\n");
         fprintf(salida, "    # printInt(int x): imprime un entero por terminal seguido de salto\n");
         fprintf(salida, "    # ------------------------------------------------------------------\n");
+        fprintf(salida, "    .weak printInt\n");
         fprintf(salida, "    .globl printInt\n");
         fprintf(salida, "    .type printInt, @function\n");
         fprintf(salida, "printInt:\n");
@@ -653,6 +654,7 @@ static void generar_rutinas_auxiliares(const CodigoIntermedio *ci, FILE *salida)
         fprintf(salida, "\n    # ------------------------------------------------------------------\n");
         fprintf(salida, "    # get_int(): lee un entero desde la terminal y lo retorna en %%rax\n");
         fprintf(salida, "    # ------------------------------------------------------------------\n");
+        fprintf(salida, "    .weak get_int\n");
         fprintf(salida, "    .globl get_int\n");
         fprintf(salida, "    .type get_int, @function\n");
         fprintf(salida, "get_int:\n");

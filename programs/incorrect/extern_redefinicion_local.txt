@@ -1,0 +1,9 @@
+extern int calcular(int x);
+
+int calcular(int x) { // Error Regla 2: redeclaracion del simbolo 'calcular'
+    return x * 2;
+}
+
+int main() {
+    return 0;
+}

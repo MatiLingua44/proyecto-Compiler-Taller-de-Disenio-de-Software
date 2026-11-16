@@ -45,6 +45,7 @@ typedef struct simbolo {
     Parametro *parametros; // Lista enlazada de parámetros formales
     int cant_parametros;
     struct nodoAST *ast;   // Puntero a la raíz del AST de este método ("Un AST por función")
+    int es_externo;        // 1 si es función externa (declarada con extern), 0 si es función definida localmente
 
     // Campos específicos para variables (almacenamiento de valores para interpretación o codegen)
     union {

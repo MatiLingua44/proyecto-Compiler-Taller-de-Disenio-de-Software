@@ -36,7 +36,7 @@ static Simbolo *metodo_actual = NULL;
 
 %token TOKEN_ERROR
 
-%token RETURN IF ELSE WHILE VOID
+%token RETURN IF ELSE WHILE VOID EXTERN
 %token <entero> INTEGER <boolean> BOOLEAN <flotante> FLOAT <texto> ID
 %token <texto> TYPE
 
@@ -56,7 +56,7 @@ static Simbolo *metodo_actual = NULL;
 %nonassoc '!' MENOS_UNARIO
 
 /* --- TIPOS DE NO-TERMINALES --- */
-%type <simbolo> method_header method_decl
+%type <simbolo> method_header method_decl extern_decl
 %type <nodo> function_block block statement_or_decl statements_list statement
 %type <nodo> expression method_call expression_list expression_list_items
 %type <lista_ids> variable_list
@@ -79,6 +79,19 @@ lines:
 line:
     variable_declr
     | method_decl
+    | extern_decl
+    ;
+
+extern_decl:
+    EXTERN method_header '(' parameters_list ')' ';' {
+        if ($2 != NULL) {
+            $2->ast = NULL;       // Las funciones externas no tienen cuerpo AST local
+            $2->es_externo = 1;   // Identificador marcado como funcion externa
+        }
+        CerrarNivel(tabla_simbolos);
+        metodo_actual = NULL;
+        $$ = $2;
+    }
     ;
 
 method_decl:
@@ -130,6 +143,13 @@ param_item:
             AgregarParametroAFuncion(metodo_actual, $2, td);
         }
         free($2);
+    }
+    | TYPE {
+        TipoDato td = StringATipoDato($1);
+        free($1);
+        if (metodo_actual != NULL) {
+            AgregarParametroAFuncion(metodo_actual, "", td);
+        }
     }
     ;
 

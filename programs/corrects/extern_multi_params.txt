@@ -1,0 +1,12 @@
+extern int calcular(int a, int b, int c);
+extern boolean en_rango(int val, int min_val, int max_val);
+extern void log_status(boolean ok, int code);
+
+int main() {
+    int res;
+    boolean valido;
+    res = calcular(10, 20, 30);
+    valido = en_rango(res, 50, 100);
+    log_status(valido, res);
+    return 0;
+}

@@ -1,0 +1,19 @@
+extern int get_val();
+extern void put_val(int x);
+
+int duplicar(int n) {
+    return n * 2;
+}
+
+int main() {
+    int i;
+    int acumulador;
+    acumulador = 0;
+    i = get_val();
+    while (i > 0) {
+        acumulador = acumulador + duplicar(i);
+        i = i - 1;
+    }
+    put_val(acumulador);
+    return 0;
+}

@@ -1,0 +1,12 @@
+extern int f();
+extern int get();
+extern void print(int x);
+
+int main() {
+    int a;
+    int b;
+    a = f();
+    b = get();
+    print(a + b);
+    return 0;
+}
